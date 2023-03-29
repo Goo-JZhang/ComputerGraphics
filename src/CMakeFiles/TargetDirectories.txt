@@ -1,0 +1,3 @@
+/home/zjlwsl/project/computer_graphics/Hand-cmake/hand-graphics-homework-main/src/CMakeFiles/Hand.dir
+/home/zjlwsl/project/computer_graphics/Hand-cmake/hand-graphics-homework-main/src/CMakeFiles/edit_cache.dir
+/home/zjlwsl/project/computer_graphics/Hand-cmake/hand-graphics-homework-main/src/CMakeFiles/rebuild_cache.dir

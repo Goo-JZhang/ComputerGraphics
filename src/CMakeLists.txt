@@ -1,10 +1,11 @@
 add_executable(Hand
-        gl_env.h
+        #gl_env.h
         main.cpp
-        skeletal_mesh.h
-        texture_image.h)
-
-target_link_libraries(Hand PRIVATE assimp::assimp glew_s glm stb glfw)
+        #skeletal_mesh.h
+        #texture_image.h
+        #hand_motion.h
+        )
+target_link_libraries(Hand PRIVATE assimp::assimp glew_s glm stb glfw imgui)
 target_include_directories(Hand PRIVATE
         ../third_party/glew/include
         ${CMAKE_CURRENT_BINARY_DIR})

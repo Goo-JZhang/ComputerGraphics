@@ -7,17 +7,22 @@
 
 #include <cstdlib>
 #include <cstdio>
-#include <config.h>
+#include <random>
+#include "config.h"
+
+#include "hand_motion.h"
 
 #ifndef M_PI
 #define M_PI (3.1415926535897932)
 #endif
 
 #include <iostream>
+#include <imgui/imgui.h>
+#include <imgui/imgui_impl_glfw.h>
+#include <imgui/imgui_impl_opengl3.h>
+//#include "skeletal_mesh.h"
 
-#include "skeletal_mesh.h"
-
-#include <glm/gtc/matrix_transform.hpp>
+//#include <glm/gtc/matrix_transform.hpp>
 
 namespace SkeletalAnimation {
     const char *vertex_shader_330 =
@@ -67,6 +72,130 @@ static void key_callback(GLFWwindow *window, int key, int scancode, int action, 
         glfwSetWindowShouldClose(window, GLFW_TRUE);
 }
 
+int spr_state = READY;
+bool motion_start = false;
+bool random_game = false;
+bool gun_ready = false;
+bool gun_start = false;
+bool winwin = false;
+
+glm::fvec3 camera_eye = glm::fvec3(0.0, 0.0, -1.0);
+glm::fvec3 camera_center = glm::fvec3(0.0, 0.0, 0.0);
+glm::fvec3 camera_up = glm::fvec3(0.0, 1.0, 0.0);
+
+float angle_step = 0.02*M_PI;
+
+float move_step = 0.1;
+
+void (*current_hand_motion)(SkeletalMesh::SkeletonModifier& ,glm::fmat4& ,float ,float);
+
+int keys = 0;
+
+void draw_ui()
+{
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+    ImGui::Begin("Hand controller");
+    ImGui::Text("Scissor Paper Rock Game");
+    motion_start |= ImGui::RadioButton("ready", &spr_state, READY);
+    ImGui::SameLine();
+    motion_start |= ImGui::RadioButton("scissor", &spr_state, SCISSOR);
+    ImGui::SameLine();
+    motion_start |= ImGui::RadioButton("paper", &spr_state, PAPER);
+    ImGui::SameLine();
+    motion_start |= ImGui::RadioButton("rock", &spr_state, ROCK);
+    random_game = ImGui::Button("random");
+    motion_start |= random_game;
+    ImGui::Text("Hand Gun");
+    gun_ready |= ImGui::Button("aiming");
+    motion_start |= gun_ready;
+    ImGui::SameLine();
+    gun_start |= ImGui::Button("shoot!");
+    motion_start |= gun_start;
+    ImGui::Text("Good Good");
+    winwin |= ImGui::Button("Win!");
+    motion_start |= winwin;
+    ImGui::End();
+}
+
+void getKeyInput(GLFWwindow *window,int &key)
+{
+    key = 0;
+    if(glfwGetKey(window,(int)GLFW_KEY_A)) key = GLFW_KEY_A;
+    if(glfwGetKey(window,(int)GLFW_KEY_W)) key = GLFW_KEY_W;
+    if(glfwGetKey(window,(int)GLFW_KEY_S)) key = GLFW_KEY_S;
+    if(glfwGetKey(window,(int)GLFW_KEY_D)) key = GLFW_KEY_D;
+    if(glfwGetKey(window,(int)GLFW_KEY_UP)) key = GLFW_KEY_UP;
+    if(glfwGetKey(window,(int)GLFW_KEY_DOWN)) key = GLFW_KEY_DOWN;
+    if(glfwGetKey(window,(int)GLFW_KEY_LEFT)) key = GLFW_KEY_LEFT;
+    if(glfwGetKey(window,(int)GLFW_KEY_RIGHT)) key = GLFW_KEY_RIGHT;
+}
+
+void change_camera(glm::fvec3&eye, glm::fvec3&center, glm::fvec3&up)
+{
+    if(keys==GLFW_KEY_W)
+    {
+        eye = eye + move_step*up;
+        center = center + move_step*up;
+    }
+    if(keys==GLFW_KEY_UP)
+    {
+        glm::fvec3 rotate_axis = glm::cross(up,center - eye);
+        glm::fmat3 rotate_mat = glm::fmat3(glm::rotate(glm::identity<glm::fmat4>(),
+                                            -angle_step,
+                                            rotate_axis));
+        up = rotate_mat*up;
+        glm::normalize(up);
+        center = eye + rotate_mat*(center - eye);
+    }
+    if(keys==GLFW_KEY_S)
+    {
+        eye = eye - move_step*up;
+        center = center - move_step*up;
+    }
+    if(keys==GLFW_KEY_DOWN)
+    {
+        glm::fvec3 rotate_axis = glm::cross(up,center - eye);
+        glm::fmat3 rotate_mat = glm::fmat3(glm::rotate(glm::identity<glm::fmat4>(),
+                                            angle_step,
+                                            rotate_axis));
+        up = rotate_mat*up;
+        glm::normalize(up);
+        center = eye + rotate_mat*(center - eye);
+    }
+    if(keys==GLFW_KEY_A)
+    {
+        glm::fvec3 left = glm::cross(up, center - eye);
+        glm::normalize(left);
+        eye = eye + move_step*left;
+        center = center + move_step*left;
+    }
+    if(keys==GLFW_KEY_LEFT)
+    {
+        glm::fvec3 rotate_axis = up;
+        glm::fmat3 rotate_mat = glm::fmat3(glm::rotate(glm::identity<glm::fmat4>(),
+                                            angle_step,
+                                            rotate_axis));
+        center = eye + rotate_mat*(center - eye);
+    }
+    if(keys==GLFW_KEY_D)
+    {
+        glm::fvec3 left = glm::cross(up, center - eye);
+        glm::normalize(left);
+        eye = eye - move_step*left;
+        center = center - move_step*left;
+    }
+    if(keys==GLFW_KEY_RIGHT)
+    {
+        glm::fvec3 rotate_axis = up;
+        glm::fmat3 rotate_mat = glm::fmat3(glm::rotate(glm::identity<glm::fmat4>(),
+                                            -angle_step,
+                                            rotate_axis));
+        center = eye + rotate_mat*(center - eye);
+    }
+}
+
 int main(int argc, char *argv[]) {
     GLFWwindow *window;
     GLuint vertex_shader, fragment_shader, program;
@@ -109,6 +238,7 @@ int main(int argc, char *argv[]) {
     glAttachShader(program, vertex_shader);
     glAttachShader(program, fragment_shader);
     glLinkProgram(program);
+    //glfwSetScrollCallback(window,scroll_call_back);
 
     int linkStatus;
     if (glGetProgramiv(program, GL_LINK_STATUS, &linkStatus), linkStatus == GL_FALSE)
@@ -120,22 +250,66 @@ int main(int argc, char *argv[]) {
 
     sr.setShaderInput(program, "in_position", "in_texcoord", "in_normal", "in_bone_index", "in_bone_weight");
 
+    srand(time(0));
     float passed_time;
+    float motion_start_time = (float) glfwGetTime();
     SkeletalMesh::SkeletonModifier modifier;
-
+    glm::fmat4 handtrans = glm::identity<glm::mat4>();
     glEnable(GL_DEPTH_TEST);
-    while (!glfwWindowShouldClose(window)) {
-        passed_time = (float) glfwGetTime();
+    //void (*current_hand_motion)(SkeletalMesh::SkeletonModifier& ,glm::fmat4& ,float ,float);
+    current_hand_motion = scissor_paper_rock_ready;
 
+    ImGui::CreateContext();
+    ImGui_ImplGlfw_InitForOpenGL( window, true );
+    ImGui_ImplOpenGL3_Init();
+    while (!glfwWindowShouldClose(window)) {
+        getKeyInput(window,keys);
+        change_camera(camera_eye,camera_center,camera_up);
+        passed_time = (float) glfwGetTime();
         // --- You may edit below ---
 
         // Example: Rotate the hand
         // * turn around every 4 seconds
-        float metacarpals_angle = passed_time * (M_PI / 4.0f);
+        //float metacarpals_angle = passed_time * (M_PI / 20.0f);
+        //metacarpals_angle = 0.0;
         // * target = metacarpals
         // * rotation axis = (1, 0, 0)
-        modifier["metacarpals"] = glm::rotate(glm::identity<glm::mat4>(), metacarpals_angle, glm::fvec3(1.0, 0.0, 0.0));
-
+        current_hand_motion(modifier,handtrans,passed_time,motion_start_time);
+        //paper_motion(modifier,handtrans,passed_time,0.0);
+        draw_ui();
+        if(motion_start)
+        {
+            //printf("spr_state %d\n",spr_state);
+            motion_start = false;
+            motion_start_time = (float) glfwGetTime();
+            if(random_game) spr_state = 1 + rand()%3;
+            switch(spr_state)
+            {
+                case READY:
+                    current_hand_motion = scissor_paper_rock_ready;
+                    break;
+                case SCISSOR:
+                    current_hand_motion = scissor_motion;
+                    break;
+                case PAPER:
+                    current_hand_motion = paper_motion;
+                    break;
+                case ROCK:
+                    current_hand_motion = rock_motion;
+                    break;
+            }
+            if(random_game) spr_state = READY;
+            if(gun_ready) current_hand_motion = gun_shot_ready;
+            if(gun_start) current_hand_motion = gun_shot_motion;
+            if(winwin) current_hand_motion = winwin_motion;
+            gun_ready = false;
+            gun_start = false;
+            random_game = false;
+            winwin = false;
+        }
+        //modifier["metacarpals"] = glm::rotate(modifier["metacarpals"], 
+        //                                        metacarpals_angle, 
+        //                                        glm::fvec3(modifier["metacarpals"]*glm::fvec4(0.0, 0.0, 1.0, 1.0)));
         /**********************************************************************************\
         *
         * To animate fingers, modify modifier["HAND_SECTION"] each frame,
@@ -180,7 +354,7 @@ int main(int argc, char *argv[]) {
         * Particularly, (0, 0, 1) is the rotation axis of the nearer joint.
         *
         \**********************************************************************************/
-
+        /*
         // Example: Animate the index finger
         // * period = 2.4 seconds
         float period = 2.4f;
@@ -190,13 +364,13 @@ int main(int argc, char *argv[]) {
         // * target = proximal phalange of the index
         // * rotation axis = (0, 0, 1)
         modifier["index_proximal_phalange"] = glm::rotate(glm::identity<glm::mat4>(), thumb_angle,
-                                                          glm::fvec3(0.0, 0.0, 1.0));
-
+                                                          glm::fvec3(0.0, -10.0, 10.0));
+        
+        */
         // --- You may edit above ---
-
+        ImGui::Render();
         float ratio;
         int width, height;
-
         glfwGetFramebufferSize(window, &width, &height);
         ratio = width / (float) height;
 
@@ -206,9 +380,10 @@ int main(int argc, char *argv[]) {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glUseProgram(program);
-        glm::fmat4 mvp = glm::ortho(-12.5f * ratio, 12.5f * ratio, -5.f, 20.f, -20.f, 20.f)
+        glm::fmat4 mvp = glm::ortho(-12.5f * ratio, 12.5f * ratio, -5.0f, 20.0f, -20.f, 20.f)
                          *
-                         glm::lookAt(glm::fvec3(.0f, .0f, -1.f), glm::fvec3(.0f, .0f, .0f), glm::fvec3(.0f, 1.f, .0f));
+                         glm::lookAt(camera_eye, camera_center, camera_up)
+                         * handtrans;
         glUniformMatrix4fv(glGetUniformLocation(program, "u_mvp"), 1, GL_FALSE, (const GLfloat *) &mvp);
         glUniform1i(glGetUniformLocation(program, "u_diffuse"), SCENE_RESOURCE_SHADER_DIFFUSE_CHANNEL);
         SkeletalMesh::Scene::SkeletonTransf bonesTransf;
@@ -217,12 +392,16 @@ int main(int argc, char *argv[]) {
             glUniformMatrix4fv(glGetUniformLocation(program, "u_bone_transf"), bonesTransf.size(), GL_FALSE,
                                (float *) bonesTransf.data());
         sr.render();
-
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
 
     SkeletalMesh::Scene::unloadScene("Hand");
+
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
 
     glfwDestroyWindow(window);
 

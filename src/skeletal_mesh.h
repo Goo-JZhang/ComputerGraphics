@@ -1,8 +1,9 @@
 
 // Simple Skeletal Mesh Loader & Renderer
 // Author: Yi Kangrui <yikangrui@pku.edu.cn>
-
-#pragma once
+#ifndef __SKELETAL_MESH__
+#define __SKELETAL_MESH__
+//#pragma once
 
 #include <iostream>
 #include <vector>
@@ -414,3 +415,6 @@ namespace SkeletalMesh {
     Scene::Name2Scene Scene::allScene;
     Scene Scene::error;
 }
+
+
+#endif

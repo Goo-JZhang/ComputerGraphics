@@ -1,8 +1,9 @@
 
 // Simple Texture Image Loader & Renderer
 // Author: Yi Kangrui <yikangrui@pku.edu.cn>
-
-#pragma once
+#ifndef __TEXTURE_IMAGE__
+#define __TEXTURE_IMAGE__
+//#pragma once
 
 #include <iostream>
 
@@ -163,3 +164,5 @@ namespace TextureImage {
     Texture::Name2Texture Texture::allTexture;
     Texture Texture::error;
 }
+
+#endif
