@@ -78,6 +78,8 @@ bool random_game = false;
 bool gun_ready = false;
 bool gun_start = false;
 bool winwin = false;
+bool meowmeow = false;
+bool crawlcrawl = false;
 
 glm::fvec3 camera_eye = glm::fvec3(0.0, 0.0, -1.0);
 glm::fvec3 camera_center = glm::fvec3(0.0, 0.0, 0.0);
@@ -116,6 +118,12 @@ void draw_ui()
     ImGui::Text("Good Good");
     winwin |= ImGui::Button("Win!");
     motion_start |= winwin;
+    ImGui::SameLine();
+    meowmeow |= ImGui::Button("Meowmeow");
+    motion_start |= meowmeow;
+    ImGui::SameLine();
+    crawlcrawl |= ImGui::Button("Crawling");
+    motion_start |= crawlcrawl; 
     ImGui::End();
 }
 
@@ -302,10 +310,14 @@ int main(int argc, char *argv[]) {
             if(gun_ready) current_hand_motion = gun_shot_ready;
             if(gun_start) current_hand_motion = gun_shot_motion;
             if(winwin) current_hand_motion = winwin_motion;
+            if(meowmeow) current_hand_motion = meowmeow_motion;
+            if(crawlcrawl) current_hand_motion = crawlcrawl_motion;
             gun_ready = false;
             gun_start = false;
             random_game = false;
             winwin = false;
+            meowmeow = false;
+            crawlcrawl = false;
         }
         //modifier["metacarpals"] = glm::rotate(modifier["metacarpals"], 
         //                                        metacarpals_angle, 

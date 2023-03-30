@@ -12,9 +12,13 @@ enum scissor_paper_rock {READY,SCISSOR,PAPER,ROCK};
 
 float SCISSOR_PAPER_ROCK_ANIMATION_TIME = 0.5f;
 
-float GUN_SHOT_TIME = 0.3f;
+float GUN_SHOT_TIME = 0.15f;
 
 float WINWIN_PERIOD = 2.0f;
+
+float MEOWMEOW_PERIOD = 1.0f;
+
+float CRAWLCRAWL_PERIOD = 2.0f;
 
 std::vector<std::string> fringers = {"index","middle","ring","pinky"};
 std::vector<std::string> phalange = {"_proximal_phalange","_intermediate_phalange","_distal_phalange"};
@@ -274,4 +278,93 @@ void winwin_motion(SkeletalMesh::SkeletonModifier& modifier, glm::fmat4& transma
                                                                     glm::fvec3(0.0, 0.0, 1.0));
     }
 }
+
+void meowmeow_motion(SkeletalMesh::SkeletonModifier& modifier, glm::fmat4& transmat, float passed_time, float start_time)
+{
+    float animation_process = (passed_time - start_time)/MEOWMEOW_PERIOD;
+    float turn_around_process = animation_process/2;
+    while(animation_process>1) animation_process -= 1.0f;
+    while(turn_around_process>1) turn_around_process -= 1.0f;
+    modifier["metacarpals"] = glm::rotate(glm::identity<glm::mat4>(), 
+                                            float((0.2f)*(-2*tri_map(animation_process-0.5))*M_PI), 
+                                            glm::fvec3(0.0, 0.0, 1.0));
+    modifier["metacarpals"] = glm::rotate(modifier["metacarpals"], 
+                                            float((0.2f)*(1+4*tri_map(turn_around_process-0.5))*M_PI), 
+                                            glm::fvec3(1.0, 0.0, 0.0));
+
+    transmat = glm::translate(glm::identity<glm::mat4>(), 
+                                glm::fvec3(0.0, 3.0, 0.0));
+    modifier["thumb_proximal_phalange"] = glm::rotate(glm::identity<glm::mat4>(),
+                                                        float((-0.4f*tri_map(animation_process-0.5))*M_PI),
+                                                        glm::fvec3(0.0, 0.0, 1.0));
+    modifier["thumb_proximal_phalange"] = glm::rotate(modifier["thumb_proximal_phalange"],
+                                                        float(0.2*M_PI),
+                                                        glm::fvec3(0.0, 1.0, 0.0));
+    modifier["thumb_intermediate_phalange"] = glm::rotate(glm::identity<glm::mat4>(),
+                                                            float(0.4*M_PI),
+                                                            glm::fvec3(0.0, 0.0, 1.0));
+    modifier["thumb_distal_phalange"] = glm::rotate(glm::identity<glm::mat4>(),
+                                                    float(0.5*M_PI),
+                                                    glm::fvec3(0.0, 0.0, 1.0));
+    for(int i = 0;i<fringers.size();i++)
+    {
+        modifier[(fringers[i]+phalange[0]).c_str()] = glm::rotate(glm::identity<glm::mat4>(),
+                                                                    float((0.1-0.02*tri_map(i-1)-0.4*tri_map(animation_process-0.5))*M_PI),
+                                                                    glm::fvec3(0.0, 0.0, 1.0));                                
+        for(int j = 1;j<phalange.size();j++)
+        {
+            modifier[(fringers[i]+phalange[j]).c_str()] = glm::rotate(glm::identity<glm::mat4>(),
+                                                                        float((0.55-0.02*j-0.01*i)*M_PI),
+                                                                        glm::fvec3(0.0, 0.0, 1.0));
+        }
+    }
+}
+
+float rescale(float x)
+{
+    while(x>1) x-=1;
+    return x;
+}
+
+void crawlcrawl_motion(SkeletalMesh::SkeletonModifier& modifier, glm::fmat4& transmat, float passed_time, float start_time)
+{
+    float animation_process = (passed_time - start_time)/CRAWLCRAWL_PERIOD;
+    while(animation_process>1) animation_process -= 1.0f;
+    modifier["metacarpals"] = glm::rotate(glm::identity<glm::mat4>(), 
+                                            float(0.35f*M_PI), 
+                                            glm::fvec3(0.0, 0.0, 1.0));
+    modifier["metacarpals"] = glm::rotate(modifier["metacarpals"], 
+                                            float(0.3f*M_PI), 
+                                            glm::fvec3(0.0, 1.0, 0.0));
+    transmat = glm::translate(glm::identity<glm::mat4>(), 
+                                glm::fvec3(0.0, 6.0, 0.0));
+    modifier["thumb_proximal_phalange"] = glm::rotate(glm::identity<glm::mat4>(),
+                                                        float((0.1f+0.4f*tri_map(animation_process-0.5))*M_PI),
+                                                        glm::fvec3(0.0, 0.0, 1.0));
+    modifier["thumb_proximal_phalange"] = glm::rotate(modifier["thumb_proximal_phalange"],
+                                                        float(-(0.1f + 0.1f*tri_map(animation_process - 0.5))*M_PI),
+                                                        glm::fvec3(0.0, 1.0, 0.0));
+    modifier["thumb_intermediate_phalange"] = glm::rotate(glm::identity<glm::mat4>(),
+                                                            float((0.3f + 0.5*tri_map(animation_process - 0.5))*M_PI),
+                                                            glm::fvec3(0.0, 0.0, 1.0));
+    modifier["thumb_distal_phalange"] = glm::rotate(glm::identity<glm::mat4>(),
+                                                    float((0.4f + 0.8*tri_map(animation_process - 0.5f))*M_PI),
+                                                    glm::fvec3(0.0, 0.0, 1.0));
+    for(int i = 0;i<fringers.size();i++)
+    {
+        modifier[(fringers[i]+phalange[0]).c_str()] = glm::rotate(glm::identity<glm::mat4>(),
+                                                                    float((0.15 - 0.05f*i -0.6*tri_map(rescale(animation_process+1.2-0.2*i)-0.5))*M_PI),
+                                                                    glm::fvec3(0.0, 0.0, 1.0));
+        modifier[(fringers[i]+phalange[0]).c_str()] = glm::rotate(modifier[(fringers[i]+phalange[0]).c_str()],
+                                                                    float((0.08f*i - 0.0f)*M_PI),
+                                                                    glm::fvec3(0.0, 1.0, 0.0));
+        for(int j = 1;j<phalange.size();j++)
+        {
+            modifier[(fringers[i]+phalange[j]).c_str()] = glm::rotate(glm::identity<glm::mat4>(),
+                                                                        float((0.45-0.1*j + 0.01*i)*(-2*tri_map(rescale(animation_process+1.2-0.2*i)-0.5))*M_PI),
+                                                                        glm::fvec3(0.0, 0.0, 1.0));
+        }
+    }
+}
+
 #endif

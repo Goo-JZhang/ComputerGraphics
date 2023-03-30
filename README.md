@@ -46,7 +46,7 @@
 
 Hand Gun下有两个按钮：aiming为静态瞄准动作；shoot!为枪击动作，执行完毕后会定格在最后一步.
 
-Good Good下只有一个winwin按钮，点击后手会6.
+Good Good部分: Win!按钮，点击后手会6; Meowmeow点击后会变成猫猫手; Crawling点击后会爬.
 
 ### 镜头移动
 
